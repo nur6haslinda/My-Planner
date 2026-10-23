@@ -1,0 +1,45 @@
+
+name: Build Planner Comel APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "planner_comel.zip"
+      - ".github/workflows/main.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Extract planner project
+        run: |
+          unzip planner_comel.zip -d source
+          cd source/planner_comel
+          npm install
+          npm run build
+          npx cap add android
+
+      - name: Build Android APK
+        run: |
+          cd source/planner_comel
+          npx cap sync android
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Save APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Planner-Comel-APK
+          path: source/planner_comel/android/app/build/outputs/apk/debug/app-debug.apk
